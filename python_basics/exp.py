@@ -1,14 +1,14 @@
 from __future__ import division
 import numpy as np
+import math
 def expo(x):
-    err,ans,newAns,count = 1,1,1,1
+    ans,newAns,count = 1,1,1
     prevTerm = x
-    while (err>0.00001):
+    while (math.fabs(prevTerm) > 0.00001):
         ans = ans + prevTerm
         count += 1
         prevTerm *= x/count
         newAns = ans + prevTerm
-        err = newAns - ans
     return newAns
 
 if __name__ == '__main__':
