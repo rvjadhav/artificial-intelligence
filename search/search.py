@@ -72,6 +72,25 @@ def tinyMazeSearch(problem):
     w = Directions.WEST
     return  [s, s, w, s, w, w, s, w]
 
+
+def generalSearch(problem, fringe):
+    closed = []
+    fringe.push([(problem.getStartState(), "Stop", 0)])
+    while not fringe.isEmpty():
+        path = fringe.pop()
+        s = path[len(path) - 1]
+        s = s[0]
+        if problem.isGoalState(s):
+            return [x[1] for x in path][1:]
+        if s not in closed:
+            closed.append(s)
+            for successor in problem.getSuccessors(s):
+                if successor[0] not in closed:
+                    successorPath = path[:]
+                    successorPath.append(successor)
+                    fringe.push(successorPath)
+    return []
+
 def depthFirstSearch(problem):
     """
     Search the deepest nodes in the search tree first.
@@ -87,16 +106,21 @@ def depthFirstSearch(problem):
     print "Start's successors:", problem.getSuccessors(problem.getStartState())
     """
     "*** YOUR CODE HERE ***"
+    fringe = util.Stack()
+    return generalSearch(problem, fringe)
     util.raiseNotDefined()
 
 def breadthFirstSearch(problem):
     """Search the shallowest nodes in the search tree first."""
     "*** YOUR CODE HERE ***"
+    fringe = util.Queue()
+    return generalSearch(problem, fringe)
     util.raiseNotDefined()
 
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
     "*** YOUR CODE HERE ***"
+    return aStarSearch(problem);
     util.raiseNotDefined()
 
 def nullHeuristic(state, problem=None):
@@ -109,7 +133,50 @@ def nullHeuristic(state, problem=None):
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
     "*** YOUR CODE HERE ***"
+
+
+    "Search the node that has the lowest combined cost and heuristic first."
+    successorsExplored = {}
+    g_n = {}
+    queue = util.PriorityQueue()
+
+    for successor in problem.getSuccessors(problem.getStartState()):
+        queue.push((successor, None), successor[2] + heuristic(successor[0], problem))
+
+    g_n[problem.getStartState()] = 0
+    if (problem.isGoalState(problem.getStartState())):
+        return []
+
+    while (not queue.isEmpty()):
+        successors = queue.pop()
+        if (successors[0][0] in g_n):
+            continue
+
+        successorsExplored[successors[0]] = successors[1]
+        if (successors[1] is not None):
+            g_n[successors[0][0]] = g_n[successors[1][0]] + successors[0][2]
+        else:
+            g_n[successors[0][0]] = successors[0][2]
+
+        if (problem.isGoalState(successors[0][0])):
+            return reconstructPath(successorsExplored, successors[0])
+
+        for successor in problem.getSuccessors(successors[0][0]):
+            if (successor[0] not in g_n):
+                queue.push((successor, successors[0]),
+                           g_n[successors[0][0]] + successor[2] + heuristic(successor[0], problem))
+
+    return None
     util.raiseNotDefined()
+
+def reconstructPath(explored, goal):
+    dirs = [];
+    k = goal;
+    while k is not None:
+        dirs.append(k[1]);
+        k = explored[k];
+    dirs.reverse();
+    return dirs;
 
 
 # Abbreviations
