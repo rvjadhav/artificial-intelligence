@@ -288,6 +288,7 @@ class CornersProblem(search.SearchProblem):
         # Please add any code here which you would like to use
         # in initializing the problem
         "*** YOUR CODE HERE ***"
+        self.conList = list(self.corners)
 
     def getStartState(self):
         """
@@ -295,7 +296,7 @@ class CornersProblem(search.SearchProblem):
         space)
         """
         "*** YOUR CODE HERE ***"
-        return (self.startingPosition, [self.corners[0], self.corners[1], self.corners[2], self.corners[3]])
+        return (self.startingPosition,self.conList)
         util.raiseNotDefined()
 
     def isGoalState(self, state):
@@ -307,6 +308,7 @@ class CornersProblem(search.SearchProblem):
             return True
         else:
             return False
+
         util.raiseNotDefined()
 
     def getSuccessors(self, state):
@@ -342,8 +344,10 @@ class CornersProblem(search.SearchProblem):
                 nextState = (nextPosition, cornersLeft)
                 cost = 1
                 successors.append((nextState, action, cost))
-        self._expanded += 1 # DO NOT CHANGE
+        self._expanded += 1  # DO NOT CHANGE
         return successors
+        util.raiseNotDefined()
+
 
     def getCostOfActions(self, actions):
         """
@@ -392,18 +396,6 @@ def cornersHeuristic(state, problem):
         corners.remove(tempCorner)
     return sum
     util.raiseNotDefined()
-
-def closestPoint(fromPoint, candidates):
-    if len(candidates) == 0:
-        return None
-    closestCorner = candidates[0]
-    closestCost = util.manhattanDistance(fromPoint, closestCorner)
-    for candidate in candidates[1:]:
-        thisCost = util.manhattanDistance(fromPoint, candidate)
-        if closestCost > thisCost:
-            closestCost = thisCost
-            closestCorner = candidate
-    return closestCorner
 
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"

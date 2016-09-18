@@ -133,9 +133,6 @@ def nullHeuristic(state, problem=None):
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
     "*** YOUR CODE HERE ***"
-
-
-    "Search the node that has the lowest combined cost and heuristic first."
     successorsExplored = {}
     g_n = {}
     queue = util.PriorityQueue()
@@ -143,7 +140,7 @@ def aStarSearch(problem, heuristic=nullHeuristic):
     for successor in problem.getSuccessors(problem.getStartState()):
         queue.push((successor, None), successor[2] + heuristic(successor[0], problem))
 
-    g_n[problem.getStartState()] = 0
+    g_n[problem.getStartState()[0]] = 0
     if (problem.isGoalState(problem.getStartState())):
         return []
 
@@ -177,7 +174,6 @@ def reconstructPath(explored, goal):
         k = explored[k];
     dirs.reverse();
     return dirs;
-
 
 # Abbreviations
 bfs = breadthFirstSearch
