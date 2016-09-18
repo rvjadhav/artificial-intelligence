@@ -288,7 +288,7 @@ class CornersProblem(search.SearchProblem):
         # Please add any code here which you would like to use
         # in initializing the problem
         "*** YOUR CODE HERE ***"
-        self.conList = list(self.corners)
+        self.conerList = list(self.corners)
 
     def getStartState(self):
         """
@@ -296,7 +296,7 @@ class CornersProblem(search.SearchProblem):
         space)
         """
         "*** YOUR CODE HERE ***"
-        return (self.startingPosition,self.conList)
+        return (self.startingPosition,self.conerList)
         util.raiseNotDefined()
 
     def isGoalState(self, state):
@@ -490,8 +490,6 @@ def foodHeuristic(state, problem):
 
     position, foodGrid = state
     "*** YOUR CODE HERE ***"
-    import util;
-    pos, foodGrid = state
     foodList = foodGrid.asList();
 
     closestFood = None
@@ -507,22 +505,20 @@ def foodHeuristic(state, problem):
                     furthestFoods = problem.heuristicInfo[(j, i)];
             else:
                 problem.heuristicInfo[(i, j)] = mazeDistance(i, j, problem.startingGameState);
-                #            problem.heuristicInfo[(i,j)] = util.manhattanDistance(i,j);
                 if problem.heuristicInfo[(i, j)] > furthestFoods:
                     furthestFoods = problem.heuristicInfo[(i, j)];
 
     for food in foodList:
-        if (pos, food) in problem.heuristicInfo:  # if this was stored already
-            if closestFood == None or closestFood > problem.heuristicInfo[(pos, food)]:
-                closestFood = problem.heuristicInfo[(pos, food)];
+        if (position, food) in problem.heuristicInfo:
+            if closestFood == None or closestFood > problem.heuristicInfo[(position, food)]:
+                closestFood = problem.heuristicInfo[(position, food)];
         else:
-            problem.heuristicInfo[(pos, food)] = mazeDistance(pos, food, problem.startingGameState);
-            #        problem.heuristicInfo[(pos,food)] = util.manhattanDistance(pos,food);
-            if closestFood == None or closestFood > problem.heuristicInfo[(pos, food)]:
-                closestFood = problem.heuristicInfo[(pos, food)];
+            problem.heuristicInfo[(position, food)] = mazeDistance(position, food, problem.startingGameState);
+            if closestFood == None or closestFood > problem.heuristicInfo[(position, food)]:
+                closestFood = problem.heuristicInfo[(position, food)];
 
     if closestFood is None:
-        closestFood = 0;  # we can't let that happen
+        closestFood = 0;
 
     return closestFood + furthestFoods;
 
