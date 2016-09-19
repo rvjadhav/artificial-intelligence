@@ -133,47 +133,29 @@ def nullHeuristic(state, problem=None):
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
     "*** YOUR CODE HERE ***"
-    successorsExplored = {}
-    g_n = {}
-    queue = util.PriorityQueue()
-
-    for successor in problem.getSuccessors(problem.getStartState()):
-        queue.push((successor, None), successor[2] + heuristic(successor[0], problem))
-
-    g_n[problem.getStartState()[0]] = 0
-    if (problem.isGoalState(problem.getStartState())):
-        return []
-
-    while (not queue.isEmpty()):
-        successors = queue.pop()
-        if (successors[0][0] in g_n):
-            continue
-
-        successorsExplored[successors[0]] = successors[1]
-        if (successors[1] is not None):
-            g_n[successors[0][0]] = g_n[successors[1][0]] + successors[0][2]
-        else:
-            g_n[successors[0][0]] = successors[0][2]
-
-        if (problem.isGoalState(successors[0][0])):
-            return reconstructPath(successorsExplored, successors[0])
-
-        for successor in problem.getSuccessors(successors[0][0]):
-            if (successor[0] not in g_n):
-                queue.push((successor, successors[0]),
-                           g_n[successors[0][0]] + successor[2] + heuristic(successor[0], problem))
-
-    return None
+    p_q_of_states = util.PriorityQueue()
+    closed_set = []
+    closed_set.append(problem.getStartState())
+    startSuccesors = problem.getSuccessors(problem.getStartState())
+    for successor, action, cost in startSuccesors:
+        path = []
+        path.append(action)
+        crnt_cost = cost + heuristic(successor, problem)
+        p_q_of_states.push((successor, path, cost), crnt_cost)
+    while not p_q_of_states.isEmpty():
+        crnt_state, crnt_path, crnt_path_cost = p_q_of_states.pop()
+        if problem.isGoalState(crnt_state):
+            goal_path = crnt_path
+            return goal_path
+        if crnt_state not in closed_set:
+            closed_set.append(crnt_state)
+            successors = problem.getSuccessors(crnt_state)
+            for successor, action, new_cost in successors:
+                tmp_path = list(crnt_path)
+                tmp_path.append(action)
+                tmp_cost = crnt_path_cost + new_cost
+                p_q_of_states.push((successor, tmp_path, tmp_cost), (tmp_cost + heuristic(successor, problem)))
     util.raiseNotDefined()
-
-def reconstructPath(explored, goal):
-    dirs = [];
-    k = goal;
-    while k is not None:
-        dirs.append(k[1]);
-        k = explored[k];
-    dirs.reverse();
-    return dirs;
 
 # Abbreviations
 bfs = breadthFirstSearch
