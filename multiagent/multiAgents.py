@@ -74,7 +74,30 @@ class ReflexAgent(Agent):
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
         "*** YOUR CODE HERE ***"
-        return successorGameState.getScore()
+        foodLeft = sum(int(j) for i in newFood for j in i)
+
+        if foodLeft > 0:
+            foodDistances = [manhattanDistance(newPos, (x, y))
+                              for x, row in enumerate(newFood)
+                              for y, food in enumerate(row)
+                              if food]
+            shortestFood = min(foodDistances)
+        else:
+            shortestFood = 0
+
+        if newGhostStates:
+            ghostDistances = [manhattanDistance(ghost.getPosition(), newPos)
+                               for ghost in newGhostStates]
+            shortestGhost = min(ghostDistances)
+
+            if shortestGhost == 0:
+                shortestGhost = -2000
+            else:
+                shortestGhost = -5 / shortestGhost
+        else:
+            shortestGhost = 0
+
+        return -2 * shortestFood + shortestGhost - 40 * foodLeft
 
 def scoreEvaluationFunction(currentGameState):
     """
@@ -129,7 +152,31 @@ class MinimaxAgent(MultiAgentSearchAgent):
             Returns the total number of agents in the game
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+        def searchDepth(state, depth, agent):
+            if agent == state.getNumAgents():
+                if depth == self.depth:
+                    return self.evaluationFunction(state)
+                else:
+                    return searchDepth(state, depth + 1, 0)
+            else:
+                actions = state.getLegalActions(agent)
+
+                if len(actions) == 0:
+                    return self.evaluationFunction(state)
+
+                next_states = (
+                    searchDepth(state.generateSuccessor(agent, action),
+                                 depth, agent + 1)
+                    for action in actions
+                )
+
+                return (max if agent == 0 else min)(next_states)
+
+        return max(
+            gameState.getLegalActions(0),
+            key=lambda x: searchDepth(gameState.generateSuccessor(0, x), 1, 1)
+        )
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
@@ -141,7 +188,62 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
           Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+        def minVal(state, depth, agent, alpha, beta):
+            if agent == state.getNumAgents():
+                return maxVal(state, depth + 1, 0, alpha, beta)
+
+            val = None
+            for action in state.getLegalActions(agent):
+                successor = minVal(state.generateSuccessor(agent, action), depth, agent + 1, alpha, beta)
+                val = successor if val is None else min(val, successor)
+
+                if alpha is not None and val < alpha:
+                    return val
+
+                beta = val if beta is None else min(beta, val)
+
+            if val is None:
+                return self.evaluationFunction(state)
+
+            return val
+
+        def maxVal(state, depth, agent, alpha, beta):
+            assert agent == 0
+
+            if depth > self.depth:
+                return self.evaluationFunction(state)
+
+            val = None
+            for action in state.getLegalActions(agent):
+                successor = minVal(state.generateSuccessor(agent, action), depth, agent + 1, alpha, beta)
+                val = max(val, successor)
+
+                if beta is not None and val > beta:
+                    return val
+
+                alpha = max(alpha, val)
+
+            if val is None:
+                return self.evaluationFunction(state)
+
+            return val
+
+        val, alpha, beta, best = None, None, None, None
+        for action in gameState.getLegalActions(0):
+            val = max(val, minVal(gameState.generateSuccessor(0, action), 1, 1, alpha, beta))
+            # if val >= beta: return action
+            if alpha is None:
+                alpha, best = val, action
+            else:
+                alpha, best = max(val, alpha), action if val > alpha else best
+
+        return best
+
+    def average(lst):
+        lst = list(lst)
+        return sum(lst) / len(lst)
+
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
@@ -156,7 +258,42 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
           legal moves.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+        def maxValue(state, currentDepth):
+            currentDepth = currentDepth + 1
+            if state.isWin() or state.isLose() or currentDepth == self.depth:
+                return self.evaluationFunction(state)
+            a = float('-Inf')
+            for pAction in state.getLegalActions(0):
+                a = max(a, expValue(state.generateSuccessor(0, pAction), currentDepth, 1))
+            return a
+
+        def expValue(state, currentDepth, ghostNum):
+            if state.isWin() or state.isLose():
+                return self.evaluationFunction(state)
+            a = 0
+            for pAction in state.getLegalActions(ghostNum):
+                if ghostNum == gameState.getNumAgents() - 1:
+                    a = a + (maxValue(state.generateSuccessor(ghostNum, pAction), currentDepth)) / len(
+                        state.getLegalActions(ghostNum))
+                else:
+                    a = a + (expValue(state.generateSuccessor(ghostNum, pAction), currentDepth, ghostNum + 1)) / len(
+                        state.getLegalActions(ghostNum))
+            return a
+
+            # Body of expectimax starts here: #
+
+        pacmanActions = gameState.getLegalActions(0)
+        maximum = float('-Inf')
+        maxAction = ''
+        for action in pacmanActions:
+            currentDepth = 0
+            currentMax = expValue(gameState.generateSuccessor(0, action), currentDepth, 1)
+            if currentMax > maximum or (currentMax == maximum and random.random() > .3):
+                maximum = currentMax
+                maxAction = action
+        return maxAction
+
 
 def betterEvaluationFunction(currentGameState):
     """
@@ -166,6 +303,61 @@ def betterEvaluationFunction(currentGameState):
       DESCRIPTION: <write something here so we know what you did>
     """
     "*** YOUR CODE HERE ***"
+    newPos = currentGameState.getPacmanPosition()
+    newFood = currentGameState.getFood()
+    newGhostStates = currentGameState.getGhostStates()
+    newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
+
+    heuristic = 0
+
+    for st in newScaredTimes:
+        heuristic += st
+        # print "st",st
+
+    ghostDistances = []
+    for gs in newGhostStates:
+        ghostDistances += [manhattanDistance(gs.getPosition(), newPos)]
+    # print "ghostDist",ghostDistances
+
+    foodList = newFood.asList()
+
+    wallList = currentGameState.getWalls().asList()
+
+    emptyFoodNeighbors = 0
+    foodDistances = []
+
+    def foodNeighbors(foodPos):
+        foodNeighbors = []
+        foodNeighbors.append((foodPos[0] - 1, foodPos[1]))
+        foodNeighbors.append((foodPos[0], foodPos[1] - 1))
+        foodNeighbors.append((foodPos[0], foodPos[1] + 1))
+        foodNeighbors.append((foodPos[0] + 1, foodPos[1]))
+        return foodNeighbors
+
+    for f in foodList:
+        neighbors = foodNeighbors(f)
+        for fn in neighbors:
+            if fn not in wallList and fn not in foodList:
+                emptyFoodNeighbors += 1
+        foodDistances += [manhattanDistance(newPos, f)]
+    # print "food",foodDistances
+
+    inverseFoodDist = 0
+    if len(foodDistances) > 0:
+        inverseFoodDist = 1.0 / (min(foodDistances))
+
+        # print "ifd",inverseFoodDist
+
+        # print "st",newScaredTimes
+
+    heuristic += (min(ghostDistances) * ((inverseFoodDist ** 4)))
+    # heuristic += min(ghostDistances)*2
+    heuristic += currentGameState.getScore() - (float(emptyFoodNeighbors) * 4.5)
+    # print emptyFoodNeighbors,currentGameState.getScore(),currentGameState.getScore()-(float(emptyFoodNeighbors)*9),heuristic
+    # heuristic *= 1.0/len(foodDistances)
+    # heuristic -= inverseFoodDist**2
+    # print "heuristic:",heuristic
+    return heuristic
     util.raiseNotDefined()
 
 # Abbreviation
